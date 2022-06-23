@@ -1,5 +1,5 @@
 # Algorithm-Visualisation
-Vsualisation of famous algorithms in python
-Language -> python
-Lbrary used -> pygame
-Istallation -> pip install pygame
+Vsualisation of famous algorithms.
+Language -> python.
+Library used -> pygame.
+Installation -> pip install pygame
