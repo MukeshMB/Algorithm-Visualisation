@@ -1,137 +1,159 @@
-from pickle import TRUE
 import pygame
+
+WIDTH = 800
+WIN = pygame.display.set_mode((WIDTH, WIDTH))
+pygame.display.set_caption('nQueen')
 
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+ORANGE = (255, 165, 0)
+TURQUOISE = (64, 224, 208)
+PURPLE = (128, 0, 128)
+YELLOW = (102, 102, 0)
+MAGENTA = (0, 230, 230)
 
-
-WIDTH = 900
-n = 5
-WIN = pygame.display.set_mode((WIDTH, WIDTH))
-pygame.display.set_caption('nQueen visualisation')
 
 class Node:
-	def __init__(self, row, col, width):
-		self.row = row
-		self.col = col
-		self.width = width
-		self.x = row * width
-		self.y = col * width
-		self.color = WHITE
+    def __init__(self, row, col, width, total_rows):
+        self.row = row
+        self.col = col
+        self.x = row * width
+        self.y = col * width
+        self.width = width
+        self.color = WHITE
+        self.total_rows = total_rows
+        self.vis = 0
 
-	def make_start(self):
-		self.color = GREEN
+    def get_pos(self):
+        return self.row, self.col
 
-	def make_end(self):
-		self.color = RED
+    def make_start(self):
+        self.color = GREEN
 
-	def reset(self):
-		self.color = WHITE
+    def make_end(self):
+        self.color = RED
 
-	def make_visit(self):
-		self.color = RED
+    def reset(self):
+        self.color = WHITE
 
-	def draw(self):
-		pygame.draw.rect(WIN, self.color, (self.x, self.y, self.width, self.width))
+    def make_road(self):
+        self.color = BLACK
 
+    def make_path(self):
+        self.color = BLUE
 
-def make_grid(width):
-	Grid = []
-	for i in range(0, n):
-		Grid.append([])
-		for j in range(0, n):
-			Grid[i].append(Node(i, j, width))
+    def make_visited(self):
+        self.color = MAGENTA
 
-	return Grid
+    def make_line(self):
+        self.color = ORANGE
 
-
-def draw_screen(Grid):
-	for list in Grid:
-		for node in list:
-			node.draw()
-			pygame.draw.line(WIN, (0, 0, 0), (node.x, 0), (node.x, WIDTH))
-			pygame.draw.line(WIN, (0, 0, 0), (0, node.y), (WIDTH, node.y))
-	pause()
-	pygame.display.update()
+    def draw(self, win):
+        pygame.draw.rect(win, self.color, (self.x, self.y, self.width, self.width))
 
 
-def pause():
-	clk = pygame.time.Clock()
-	clk.tick(60)
 
-	
-def nQueen(Grid, ld, rd, cl, rw, row):
-	if row >= n:
-		print('\n------------------------------------------------------')
-		print('| press [spacebar] to find another possible solution |')
-		print('------------------------------------------------------')
-		while True:
-			for event in pygame.event.get():
-				if event.type == pygame.QUIT:
-					return 0
-				if event.type == pygame.KEYDOWN:
-					if event.key == pygame.K_SPACE:
-						return 0
-		 
-	for col in range(0, n):
-		Grid[col][row].make_start()
-		draw_screen(Grid)
+def make_grid(rows, width):
+    grid = []
+    gap = width // rows
+    for i in range(rows):
+        grid.append([])
+        for j in range(rows):
+            grid[i].append(Node(i, j, gap, rows))
 
-		if not ld[col-row+n-1] and not rd[col+row] and not cl[row] and not rw[col]:
-			ld[col-row+n-1] = True
-			rd[col+row] = True
-			cl[row] = True
-			rw[col] = True
-			Grid[col][row].make_visit()
-			draw_screen(Grid)
-
-			nQueen(Grid, ld, rd, cl, rw, row+1)
-
-			ld[col-row+n-1] = False
-			rd[col+row] = False
-			cl[row] = False
-			rw[col] = False
-			Grid[col][row].reset()
-			draw_screen(Grid)
-		
-		else:
-			Grid[col][row].reset()
-			draw_screen(Grid)
-		
-	
-		
+    return grid
 
 
-def main():
-	width = WIDTH // n
-	Grid = make_grid(width)
+def draw_line(win,  rows, width):
+    gap = width // rows
+    for i in range(rows):
+        pygame.draw.line(win, BLACK, (0, i * gap), (width, i * gap))
+        pygame.draw.line(win, BLACK, (i * gap, 0), (i * gap, width))
+        pygame.display.update()
 
-	start = None
-	end = None
-	run = True
 
-	print('\n-----------------------------------')
-	print('| press [spacebar] to start nQueen |')
-	print('-----------------------------------')
+def draw(win, grid, rows, width):
+    for row in grid:
+        for node in row:
+            node.draw(win)
 
-	while run:
-		draw_screen(Grid)
+    draw_line(win, rows, width)
+    pygame.display.update()
 
-		for event in pygame.event.get():
-			if event.type == pygame.QUIT:
-				run = False
-				return -1
-				
-			if event.type == pygame.KEYDOWN:
-				if event.key == pygame.K_SPACE:
-					ld = [False] * (2*n + 1)
-					rd = [False] * (2*n + 1)
-					cl = [False] * n
-					rw = [False] * n
-					nQueen(Grid, ld, rd, cl, rw, 0)
-					print('ends')
-					
-main()
+
+def get_clicked_pos(pos, rows, width):
+    gap = width//rows
+    x, y = pos
+    return x // gap, y // gap
+
+
+def safe(grid, row, col):
+    for i in range(row):
+        if(grid[i][col].vis):
+            return 0
+    i = row
+    j = col
+    while i > -1 and j > -1:
+        if(grid[i][j].vis):
+            return 0
+        i -=1
+        j -=1
+    i = row
+    j = col
+    while i > -1 and j < len(grid):
+        if(grid[i][j].vis):
+            return 0
+        i -=1
+        j +=1
+    return 1
+    
+    
+def nQueen(grid, row):
+    if row >= len(grid):
+        clk = pygame.time.Clock()
+        clk.tick(1)
+        return 0
+    
+    for col in range(len(grid)):
+        grid[row][col].make_end()
+        draw(WIN, grid, grid[0][0].total_rows, grid[0][0].width)
+        if(safe(grid, row, col)):
+            grid[row][col].make_start()
+            grid[row][col].vis = 1
+            draw(WIN, grid, grid[0][0].total_rows, grid[0][0].width)
+            
+            nQueen(grid, row+1)
+            
+            grid[row][col].reset()
+            grid[row][col].vis = 0
+            draw(WIN, grid, grid[0][0].total_rows, grid[0][0].width)
+        
+        grid[row][col].reset()
+        draw(WIN, grid, grid[0][0].total_rows, grid[0][0].width)
+            
+        
+
+def main(win, width):
+    rows = 20
+    grid = make_grid(rows, width)
+    run = True
+    draw(win, grid, rows, width)
+
+    while run:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+                pygame.quit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    nQueen(grid, 0)
+
+
+if __name__ == "__main__":
+    main(WIN, WIDTH)
+
 
