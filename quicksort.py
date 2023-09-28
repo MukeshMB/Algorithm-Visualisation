@@ -1,92 +1,141 @@
 import pygame
+import random
 
-HEIGHT = 1200
-WIDTH = 800
-WIN = pygame.display.set_mode((HEIGHT, WIDTH))
+# FRAME CONSTRUCTION
+def init_display():
+	WIN = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+	WIDTH = pygame.display.Info().current_w
+	HEIGHT = 9 * pygame.display.Info().current_h // 10
+	pygame.quit()
+	WIN = pygame.display.set_mode((WIDTH, HEIGHT))
+	pygame.display.set_caption('Quicksort')
+
+	return WIN, WIDTH, HEIGHT
+
+# INIT FRAME
+WIN, WIDTH, HEIGHT = init_display()
+
+# INIT @params
+width = 5
+N = WIDTH // width
 
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
+TURQUOISE = (64, 224, 208)
+PURPLE = (128, 0, 128)
+
 
 class block:
-    def __init__(self, row, y, width, color):
-        self.x = row * width
+    def __init__(self, y, color):
         self.y = y
         self.color = color
-        self.width = width
     
-    def draw(self):
-        pygame.draw.rect(WIN, self.color, (self.x, self.y, self.width, WIDTH - self.y))
-        pygame.draw.rect(WIN, BLACK, (self.x, 0, self.width, self.y))
-        pygame.draw.line(WIN, BLACK, (self.x + self.width, 0), (self.x + self.width, WIDTH))
-        pygame.draw.line(WIN, BLACK, (self.x, 0), (self.x, WIDTH))
+    def make_start(self):
+        self.color = GREEN
+    
+    def make_end(self):
+        self.color = RED
+    
+    def reset(self):
+        self.color = BLUE
+    
+    def make_large(self):
+        self.color = PURPLE
+    
+    def make_small(self):
+        self.color = TURQUOISE
+
+    def draw(self, x):
+        x = x * width
+        pygame.draw.rect(WIN, self.color, (x, self.y, width, HEIGHT-self.y))
+        pygame.draw.rect(WIN, BLACK, (x, 0, width, self.y))
+        pygame.draw.line(WIN, BLACK, (x + width, 0), (x + width, HEIGHT))
+        pygame.draw.line(WIN, BLACK, (x, 0), (x, HEIGHT))
         pygame.display.update()
         
         
+def partition(arr, low, high):
+    index = random.randint(low, high)
+    pivot = arr[index]
+    pivot.make_end()
+    pivot.draw(index)
 
-def draw_all(Grid):
-    for node in Grid:
-        node.draw()
-        
-        
-def partition(array, low, high):
-    pivot = array[high]
-    array[high].color = RED
-    array[high].draw()   
-    i = low - 1
+    arr[high].y, pivot.y = pivot.y, arr[high].y
+    arr[high].make_end()
+    arr[high].draw(high)
+
+    pivot.reset()
+    pivot.draw(index)
+
+    i = low
     for j in range(low, high):
-        if array[j].y <= pivot.y:
+        if arr[j].y > arr[high].y:
+            arr[i].y, arr[j].y = arr[j].y, arr[i].y
+            arr[i].make_small()
+            arr[i].draw(i)
+            arr[j].make_large()
+            arr[j].draw(j)
+
             i += 1
-            (array[i].y, array[j].y) = (array[j].y, array[i].y)
-            array[i].draw()
-            array[j].draw()
-            
+        
+        else:
+            if j != index:
+                arr[j].make_large()
+                arr[j].draw(j)
+    
+    arr[i].y, arr[high].y = arr[high].y, arr[i].y
+    arr[i].make_start()
+    arr[i].draw(i) 
+
+    for j in range(low, high+1):
+        if j != i:
+            arr[j].reset()
+            arr[j].draw(j)
+
+    return i
   
-    (array[i + 1].y, array[high].y) = (array[high].y, array[i + 1].y)
-    array[i].draw()
-    array[j].draw()
-    array[high].color = BLUE
-    array[high].draw()    
-    return i + 1
   
-  
-def quick_sort(array, low, high):
-  if low < high:
-    pi = partition(array, low, high)
-    quick_sort(array, low, pi - 1)
-    quick_sort(array, pi + 1, high)
+def quickSort(arr, low, high):
+    if low <= high:
+        pi = partition(arr, low, high)
+        quickSort(arr, low, pi - 1)
+        quickSort(arr, pi + 1, high)
 
     
-  
-     
-        
-
 def main():
-    n = 200
-    width = HEIGHT // n
     Grid = []
-    clk = pygame.time.Clock()
-    for i in range(n+1):
-        Grid.append(block(i, WIDTH, width, BLACK))
+
+    for i in range(N):
+        Grid.append(block(WIDTH, BLACK))
+    
+    print('-----------------------------------------------------------------------------------')
+    print('| Draw Vertical Bars [BLUE] and then press [SPACEBAR] to start QuicSort Algorithm |')
+    print('-----------------------------------------------------------------------------------')
     
     while True:
         for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+
             if pygame.mouse.get_pressed()[0]:
                 x, y = pygame.mouse.get_pos()
                 x = x // width
-                Grid[x].y = y
-                Grid[x].color = BLUE
-                Grid[x].draw()
-                
+                if x < N:
+                    Grid[x].y = y
+                    Grid[x].color = BLUE
+                    Grid[x].draw(x)
                 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    quick_sort(Grid, 0, n)
-                    draw_all(Grid)
-        
+                    quickSort(Grid, 0, N-1)
+
+                    for i in range(len(Grid)):
+                        Grid[i].draw(i)
         
 
-main()
-        
+if __name__ == "__main__":
+    main()
+   
