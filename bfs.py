@@ -1,5 +1,26 @@
 import pygame
 
+# FRAME CONSTRUCTION
+def init_display():
+	WIN = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+	WIDTH = 9 * pygame.display.Info().current_w // 10
+	HEIGHT = 9 * pygame.display.Info().current_h // 10
+	pygame.quit()
+	WIN = pygame.display.set_mode((WIDTH, HEIGHT))
+	pygame.display.set_caption('BFS TRAVERSAL')
+
+	return WIN, WIDTH, HEIGHT
+
+
+# INIT FRAME
+WIN, WIDTH, HEIGHT = init_display()
+
+# INIT @params
+M = 50
+width = WIDTH // M
+N = HEIGHT // width
+
+# INIT Colours
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
@@ -11,16 +32,11 @@ PURPLE = (128, 0, 128)
 YELLOW = (102, 102, 0)
 MAGENTA = (102, 102, 105)
 
-WIDTH = 900
-n = 50
-WIN = pygame.display.set_mode((WIDTH, WIDTH))
-pygame.display.set_caption('bfs visualisation')
 
 class Node:
-	def __init__(self, row, col, width):
+	def __init__(self, row, col):
 		self.row = row
 		self.col = col
-		self.width = width
 		self.x = row * width
 		self.y = col * width
 		self.color = WHITE
@@ -66,12 +82,12 @@ class Node:
 		return self.color == ORANGE
 
 	def draw(self):
-		pygame.draw.rect(WIN, self.color, (self.x, self.y, self.width, self.width))
+		pygame.draw.rect(WIN, self.color, (self.x, self.y, width, width))
 
 	def update_neighbors(self, grid):
-		if self.col < n-1 and not grid[self.row][self.col+1].is_barrier():
+		if self.col < N-1 and not grid[self.row][self.col+1].is_barrier():
 			self.neighbors.append(grid[self.row][self.col+1])
-		if self.row < n-1 and not grid[self.row+1][self.col].is_barrier():
+		if self.row < M-1 and not grid[self.row+1][self.col].is_barrier():
 			self.neighbors.append(grid[self.row+1][self.col])
 		if self.col > 0 and not grid[self.row][self.col-1].is_barrier():
 			self.neighbors.append(grid[self.row][self.col-1])
@@ -79,12 +95,12 @@ class Node:
 			self.neighbors.append(grid[self.row-1][self.col])
 		
 
-def make_grid(width):
+def make_grid():
 	Grid = []
-	for i in range(0, n):
+	for i in range(M+1):
 		Grid.append([])
-		for j in range(0, n):
-			Grid[i].append(Node(i, j, width))
+		for j in range(N+1):
+			Grid[i].append(Node(i, j))
 
 	return Grid
 
@@ -93,8 +109,9 @@ def draw_screen(Grid):
 	for list in Grid:
 		for node in list:
 			node.draw()
-			pygame.draw.line(WIN, (0, 0, 0), (node.x, 0), (node.x, WIDTH))
+			pygame.draw.line(WIN, (0, 0, 0), (node.x, 0), (node.x, HEIGHT))
 			pygame.draw.line(WIN, (0, 0, 0), (0, node.y), (WIDTH, node.y))
+
 	pygame.display.update()
 
 
@@ -103,11 +120,6 @@ def fill_neighbors(Grid):
 		for node in list:
 			node.neighbors.clear()
 			node.update_neighbors(Grid)
-
-
-def pause():
-	clk = pygame.time.Clock()
-	clk.tick(60)
 
 
 def spill(Grid):
@@ -143,37 +155,35 @@ def bfs(start, end, Grid):
 				if node == end:
 					q[0] = end
 					break
-		pause()
 		draw_screen(Grid)
 	
 	key = end
-	while(key != start):
+	while(key in par and key != start):
 		key = par[key]
 		if key != start:
 			key.make_path()
 	
 	spill(Grid)
-	
 	draw_screen(Grid)
 
 
 def main():
-	width = WIDTH // n
-	Grid = make_grid(width)
+	Grid = make_grid()
 
 	start = None
 	end = None
 	run = True
-	print('-------------------------------------------------------------------------------------------------')
-	print('| select start node, end node, barriers and then press [spacebar] to start bfs traversal |')
-	print('-------------------------------------------------------------------------------------------------')
+	
+	print('--------------------------------------------------------------------------------------------------------------------')
+	print('| SELECT START NODE [GREEN], END NODE [RED], BARRIER NODE [BLACK] and then press [SPACEBAR] to start BFS Traversal |')
+	print('--------------------------------------------------------------------------------------------------------------------')
+
 	while run:
 		draw_screen(Grid)
 
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
-				run = False
-				return -1
+				pygame.quit()
 			
 			if pygame.mouse.get_pressed()[0]:
 				row, col = pygame.mouse.get_pos()
@@ -197,19 +207,26 @@ def main():
 				row = row // width
 				col = col // width
 				spot = Grid[row][col]
+
 				if spot == start:
 					start = None
+
 				elif spot == end:
 					end = None
+
 				spot.reset()
 			
 			if event.type == pygame.KEYDOWN:
 				if event.key == pygame.K_SPACE:
-					print('started bfs traversal')
+					print('STARTED BFS TRAVERSAL')
 					fill_neighbors(Grid)
 					bfs(start, end, Grid)
-					print('bfs ends')
+					print('BFS ENDS')
+			
+			if event.type == pygame.KEYDOWN:
+				if event.key == pygame.K_RETURN:
+					pygame.quit()
 					
-					
-main()
 
+if __name__ == "__main__":			
+	main()
